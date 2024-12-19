@@ -1,0 +1,72 @@
+name: Publish And Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  publish:
+    permissions:
+      packages: write # Permission to publish packages
+      contents: write # For creating releases and uploading assets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: '8.0.x'
+          
+          # - name: Get version from tag
+          #   id: get_version
+          #   run: echo "VERSION=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test --no-restore --verbosity normal
+
+      - name: Pack
+        run: dotnet pack --configuration Release --no-build --output nupkgs
+        
+        # Add source for GitHub Packages
+      - name: Add GitHub Source
+        run: dotnet nuget add source --username ${{ github.repository_owner }} --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+        
+        # Publish to GitHub Packages
+      - name: Publish to GitHub Packages
+        run: dotnet nuget push "./nupkgs/*.nupkg" --source "github" --api-key ${{ secrets.GITHUB_TOKEN }} --skip-duplicate
+
+      - name: Publish to NuGet
+        run: dotnet nuget push "./nupkgs/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+      - name: Get Release Notes
+        id: get_release_notes
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          if [ -f README.md ]; then
+            {
+              echo 'NOTES<<EOF'
+              awk '/^- '"${VERSION#v}"'$/{getline; while($0 ~ /^    -/){print substr($0, 5); getline}}' README.md
+              echo 'EOF'
+            } >> "$GITHUB_OUTPUT"
+          else
+            echo "NOTES=No release notes available for ${VERSION}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: nupkgs/*.nupkg
+          name: ${{ steps.get_release_notes.outputs.VERSION }}
+          draft: false
+          prerelease: false
+          body: |
+            ## Release Notes
+            ${{ steps.get_release_notes.outputs.NOTES }}
