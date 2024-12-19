@@ -23,4 +23,16 @@
       <PackageReference Include="Kvr.DapperRelMapper" Version="1.2.4" />
       <PackageReference Include="Kvr.SqlBuilder" Version="1.2.7.1" />
     </ItemGroup>
+    <ItemGroup>
+        <None Include="../../License.txt">
+            <Pack>true</Pack>
+            <PackagePath></PackagePath>
+            <Visible>True</Visible>
+        </None>
+        <None Include="../../README.md">
+            <Pack>true</Pack>
+            <PackagePath></PackagePath>
+            <Visible>True</Visible>
+        </None>
+    </ItemGroup>    
 </Project>
