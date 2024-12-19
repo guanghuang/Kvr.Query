@@ -122,8 +122,8 @@ var orders = await connection.Select<Order>(o => o.Id)
 
 ## 🔄 Usage
 ### 🚀 Extension Methods to start a query for a specific entities
-- 📝 `IDbConnection.Select<T>()`
-- 🔍 `IDbConnection.Select<T>(Expression<Func<T, object>> keySelector)`
+- 📝 `IDbConnection.Select<T>()` - Creates a query for an entity
+- 🔍 `IDbConnection.Select<T>(Expression<Func<T, object>> keySelector)` - Creates a query with a specific key selector
     - 🔗 `keySelector`: The key selector to use for the query.
 ### 🔄 Fluent API to include related entities
 - 📊 One-to-many relationships
@@ -131,20 +131,20 @@ var orders = await connection.Select<Order>(o => o.Id)
         - 🔗 `navigationProperty`: The navigation property to include.
         - 🔑 `foreignKeyProperty`: Optional. The foreign key property to use for the relationship. If not provided, the foreign key property will be detected by convention and attribute.
         - 🔐 `childPrimaryKeyProperty`: Optional. The primary key property to use for the relationship. If not provided, the primary key property will be detected by convention and attribute.
-        - ❌ `excludeColumns`: Optinoal. The columns to exclude from the query, normally not needed, but can be used to exclude columns from the query.
+        - ❌ `excludeColumns`: Optional. The columns to exclude from the query, normally not needed, but can be used to exclude columns from the query.
 - 🔄 One-to-one or many-to-one relationships
     - 📥 `IncludeOne<TChild>(Expression<Func<TParent, TChild>> navigationProperty, Expression<Func<TParent, object>>? navigationForeignKeyProperty = null,  Expression<Func<TChild, object>>? childPrimaryKeyProperty = null, bool includeNavigationKeyInSql = false, Expression<Func<TChild, object>>[]? excludeColumns = null)`
         - 🔗 `navigationProperty`: The navigation property to include.
         - 🔑 `navigationForeignKeyProperty`: Optional. The foreign key property to use for the relationship. If not provided, the foreign key property will be detected by convention and attribute.
         - 🔐 `childPrimaryKeyProperty`: Optional. The primary key property to use for the relationship. If not provided, the primary key property will be detected by convention and attribute.
         - ⚡ `includeNavigationKeyInSql`: Optional. If true, the navigation key will be included in the SQL query.
-        - ❌ `excludeColumns`: Optinoal. The columns to exclude from the query, normally not needed, but can be used to exclude columns from the query.
+        - ❌ `excludeColumns`: Optional. The columns to exclude from the query, normally not needed, but can be used to exclude columns from the query.
 - 🌳 Nested relationships
-   - ⚠️ only support 2 levels of nested relationships.
-   - 1️⃣ first level is defined by using `IncludeOne` one to one relationship method or `IncludeMany` one to many relationship method.
-   - 2️⃣ second level only support `ThenIncludeOne` one to one relationship method.
+   - ⚠️ only supports 2 levels of nested relationships.
+   - 1️⃣ first level is defined by using `IncludeOne` one-to-one relationship method or `IncludeMany` one-to-many relationship method.
+   - 2️⃣ second level only supports `ThenIncludeOne` one-to-one relationship method.
    - 🔄 could include multiple `ThenIncludeOne` methods to define same level of nested relationship to one entity (e.g. `ThenInclude(u => u.UserProfile).ThenInclude(up => up.User)`)
-   - ℹ️ It is different from EF, it is not support `ThenIncludeOne` to higher level of nested relationship. And not needed to call `Include` method to return to parent entity then call `ThenInclude` method to include anotehr child entity.
+   - ℹ️ It is different from EF, it does not support `ThenIncludeOne` to higher level nested relationships. And not needed to call `Include` method to return to parent entity then call `ThenInclude` method to include another child entity.
    - `ThenIncludeOne<TGrandChild>(Expression<Func<TChild, TGrandChild>> navigationProperty, Expression<Func<TChild, object>>? navigationKeyProperty = null, Expression<Func<TGrandChild, object>>? grandChildPrimaryKeyProperty = null)`
      - 🔗 `navigationProperty`: The navigation property to include.
      - 🔑 `navigationKeyProperty`: Optional. The foreign key property to use for the relationship. If not provided, the foreign key property will be detected by convention and attribute.
@@ -167,11 +167,11 @@ var orders = await connection.Select<Order>()
     ....
 ```
 ### 🔄 Automatic remove duplication children entities 
-- 🔀 If entity include multiple `IncludeMany` methods, the cartesian cross product of children entities will return from `Dapper` query (e.g. If order has multiple `OrderItems` and multiple `PaymentMethods`, the query will return the cartesian cross product of `OrderItems` and `PaymentMethods`).
+- 🔀 If an entity includes multiple `IncludeMany` methods, the cartesian cross product of child entities will be returned from `Dapper` query (e.g. If order has multiple `OrderItems` and multiple `PaymentMethods`, the query will return the cartesian cross product of `OrderItems` and `PaymentMethods`).
 - ♻️ `QueryAsync` method will automatically remove duplication children entities using `Distinct` method by primary key property.
 
 ### 🔍 Primary Key and Foreign Key Detection order
-- 💻 Expression to define the primary key and foreign key properties on `IncludeOne`,  `IncludeMany`,  `ThenIncludeOne` methods:
+- 💻 Expressions to define primary key and foreign key properties on `IncludeOne`, `IncludeMany`, `ThenIncludeOne` methods:
 - 🏷️ Attribute to define the primary key and foreign key properties entities:
     - 🔑 `Key` attribute is used to define the primary key.
     - 🔗 `ForeignKey` attribute is used to define the foreign key.
@@ -196,8 +196,9 @@ var orders = await connection.Select<Order>()
 - Only supports 2 levels of relationships.
     - First level relationships are supported by using `IncludeOne` method and `IncludeMany` method. 
     - Second level relationships are only supported by using `ThenIncludeOne` method.
-- Only includes the same navigation property onece, not detectsion for duplicate navigation properties.
-- `Key` and `ForeignKey` attributes are only suport one property, not support composite key.
+- Only includes the same navigation property once, not detection for duplicate navigation properties.
+- `Key` and `ForeignKey` attributes only support one property, not supporting composite keys.
+- Lazy loading is not supported, all requests for related entities are eager loading.
 
 ## 🔧 Supported Frameworks
 - .NET Standard 2.0+
@@ -222,7 +223,7 @@ Contributions welcome! Please read our [Contributing Guide](CONTRIBUTING.md)
 5. Open a Pull Request
 
 ## 📦 Dependencies
-- [DapperRelMapper](https://github.com/guanghuang/DapperRelMapper)
+- [DapperRelMapper](https://github.com/guanghuang/DapperRelMapper) - Relationship mapping extension for Dapper
     - [Dapper](https://github.com/StackExchange/Dapper)
 - [SqlBuilder](https://github.com/guanghuang/SqlBuilder)
     - [System.ComponentModel.Annotations](https://github.com/dotnet/runtime/tree/main/src/libraries/System.ComponentModel.Annotations)
